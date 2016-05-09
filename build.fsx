@@ -36,6 +36,15 @@ let srcDir () = Path.Combine(originDir, "src")
 let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" name name version
 let universalLdFlags () = ["-arch i386"; "-arch x86_64"]
 
+let download url =
+  let file = Path.Combine(srcDir(), Path.GetFileName url)
+
+  if not (File.Exists (file)) then
+    use client = new WebClient() in
+      client.DownloadFile(url, file)
+
+  file
+
 let sh command args =
   let exitCode = ProcessHelper.ExecProcess (fun info ->
     info.FileName <- command
@@ -44,6 +53,10 @@ let sh command args =
   if exitCode <> 0 then
     let errorMsg = sprintf "Executing %s failed with exit code %d." command exitCode
     raise (BuildException(errorMsg, []))
+
+let extract filename =
+  trace(sprintf ("extract %s") (filename))
+  sprintf ("-C %s -xf %s") (buildDir()) (filename) |> sh "tar"
 
 let from (action: unit -> unit) (path: string) =
   pushd path
@@ -79,6 +92,11 @@ Target "prep" <| fun _ ->
 
 Target "autoconf" <| fun _ ->
   trace("autoconf")
+  gnuUrl("autoconf", "2.69") |> download |> extract |> ignore
+
+Target "automake" <| fun _ ->
+  trace("automake")
+  gnuUrl("automake", "1.13") |> download |> extract |> ignore
 
 Target "freetype" <| fun _ ->
   trace("freetype")
@@ -130,6 +148,7 @@ Target "BuildAll" <| fun _ ->
 
 // Dependencies
 // --------------------------------------------------------
+"prep" <== ["autoconf"; "automake"]
 "atk" <== ["glib"]
 "cairo" <== ["fontconfig"; "glib"; "pixman"]
 "fontconfig" <== ["freetype"]
