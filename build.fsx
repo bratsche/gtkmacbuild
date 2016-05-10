@@ -15,12 +15,13 @@ open Fake.EnvironmentHelper
 let originDir = FileSystemHelper.currentDirectory
 
 type PackageType =
-  GnuPackage | GnomePackage
+  GnuPackage | GnomePackage | FreeDesktopPackage
 
 type PackageInfo = {
   Source: PackageType;
   Name: string;
   Version: string;
+  ConfigFlags: string option;
 }
 
 type Arch =
@@ -78,10 +79,13 @@ let packageUrl package =
   match package.Source with
   | GnuPackage -> sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" package.Name package.Name package.Version
   | GnomePackage -> sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" package.Name (majorVersion(package.Version)) package.Name package.Version
+  | FreeDesktopPackage -> sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" package.Name package.Name package.Version
 
 let download package =
   let url = packageUrl package
   let file = Path.Combine(srcDir(), Path.GetFileName url)
+
+  trace(sprintf "Downloading file %s" url)
 
   if not (File.Exists (file)) then
     use client = new WebClient() in
@@ -100,10 +104,14 @@ let arch = sh "uname" "-m"
 let configure package =
   trace("configure")
 
+  let configFlags = match package.ConfigFlags with
+                    | None -> sprintf ("--prefix=%s") (installDir())
+                    | Some flags -> sprintf ("%s --prefix=%s") (flags) (installDir())
+
   let packageName = sprintf "%s-%s" package.Name package.Version
   Path.Combine(buildDir(), packageName)
   |> from (fun () ->
-    sh ("configure") (sprintf ("--prefix=%s") (installDir()))
+    sh "configure" configFlags
     |> ignore
   )
 
@@ -148,6 +156,13 @@ let build (filename, package) =
   |> install
 
 let startBuild package =
+  EnvironmentHelper.setEnvironVar "PATH" (sprintf ("%s/bin:/usr/bin:/bin") (installDir()))
+  EnvironmentHelper.setEnvironVar "CFLAGS" (sprintf ("-I%s/include") (installDir()))
+  EnvironmentHelper.setEnvironVar "LD_LIBRARY_PATH" (sprintf ("%s/lib") (installDir()))
+  EnvironmentHelper.setEnvironVar "LDFLAGS" (sprintf ("-L%s/lib") (installDir()))
+  EnvironmentHelper.setEnvironVar "C_INCLUDE_PATH" (sprintf ("%s/include") (installDir()))
+  EnvironmentHelper.setEnvironVar "ACLOCAL_FLAGS" (sprintf ("-I%s/share/aclocal") (installDir()))
+
   package
   |> download
   |> extract
@@ -162,12 +177,24 @@ Target "prep" <| fun _ ->
 Target "autoconf" <| fun _ ->
   trace("autoconf")
 
-  { Source = GnuPackage; Name = "autoconf"; Version = "2.69" }
+  { Source = GnuPackage; Name = "autoconf"; Version = "2.69"; ConfigFlags = None }
   |> startBuild
 
 Target "automake" <| fun _ ->
   trace("automake")
-  { Source = GnuPackage; Name = "automake"; Version = "1.13" }
+  { Source = GnuPackage; Name = "automake"; Version = "1.13"; ConfigFlags = None }
+  |> startBuild
+
+Target "libtool" <| fun _ ->
+  { Source = GnuPackage; Name = "libtool"; Version = "2.4.2"; ConfigFlags = None }
+  |> startBuild
+
+Target "pkgconfig" <| fun _ ->
+  { Source = FreeDesktopPackage; Name = "pkg-config"; Version = "0.27"; ConfigFlags = Some("--with-internal-glib") }
+  |> startBuild
+
+Target "gettext" <| fun _ ->
+  { Source = GnuPackage; Name = "gettext"; Version = "0.18.2"; ConfigFlags = None }
   |> startBuild
 
 Target "freetype" <| fun _ ->
@@ -175,9 +202,6 @@ Target "freetype" <| fun _ ->
 
 Target "libffi" <| fun _ ->
   trace("libffi")
-
-Target "gettext-runtime" <| fun _ ->
-  trace("gettext-runtime")
 
 Target "glib" <| fun _ ->
   trace("glib")
@@ -220,12 +244,12 @@ Target "BuildAll" <| fun _ ->
 
 // Dependencies
 // --------------------------------------------------------
-"prep" <== ["autoconf"; "automake"]
+"prep" <== ["autoconf"; "automake"; "libtool"; "gettext"; "pkgconfig"]
 "atk" <== ["glib"]
 "cairo" <== ["fontconfig"; "glib"; "pixman"]
 "fontconfig" <== ["freetype"]
 "gdk-pixbuf" <== ["glib"; "libpng"]
-"glib" <== ["libffi"; "gettext-runtime"; "zlib"]
+"glib" <== ["libffi"; "zlib"]
 "gtk" <== ["atk"; "gdk-pixbuf"; "pango"]
 "harfbuzz" <== ["freetype"; "glib"]
 "libpng" <== ["zlib"]
