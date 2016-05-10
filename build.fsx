@@ -15,7 +15,7 @@ open Fake.EnvironmentHelper
 let originDir = FileSystemHelper.currentDirectory
 
 type PackageType =
-  GnuPackage | GnomePackage | FreeDesktopPackage
+  GnuPackage | GnomePackage | FreeDesktopPackage | SourceForgePackage
 
 type PackageInfo = {
   Source: PackageType;
@@ -80,6 +80,7 @@ let packageUrl package =
   | GnuPackage -> sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" package.Name package.Name package.Version
   | GnomePackage -> sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" package.Name (majorVersion(package.Version)) package.Name package.Version
   | FreeDesktopPackage -> sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" package.Name package.Name package.Version
+  | SourceForgePackage -> sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.xz" package.Name package.Name package.Version
 
 let download package =
   let url = packageUrl package
@@ -237,7 +238,8 @@ Target "zlib" <| fun _ ->
   trace("zlib")
 
 Target "libpng" <| fun _ ->
-  trace("libpng")
+  { Source = SourceForgePackage; Name = "libpng"; Version = "1.4.12"; ConfigFlags = None }
+  |> startBuild
 
 Target "BuildAll" <| fun _ ->
   trace("BuildAll")
