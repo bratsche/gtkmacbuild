@@ -23,12 +23,6 @@ type PackageInfo = {
   Version: string;
 }
 
-(*
-type PackageInfo2 =
-  GnuPackage of Name: string * Version: string
-  GnomePackage of Name: string * Version: string
-*)
-
 type Arch =
   X86 | X64 | Universal
 
@@ -103,14 +97,31 @@ let extract (filename, package) =
 
 let arch = sh "uname" "-m"
 
-let configure () =
+let configure package =
   trace("configure")
-  sh (sprintf ("./configure --prefix=%s") (installDir()))
 
-let make () =
-  sh ("make")
+  let packageName = sprintf "%s-%s" package.Name package.Version
+  Path.Combine(buildDir(), packageName)
+  |> from (fun () ->
+    sh ("configure") (sprintf ("--prefix=%s") (installDir()))
+    |> ignore
+  )
 
-let install () =
+(*
+  let packageName = sprintf "%s-%s" package.Name package.Version
+  let instDir = installDir()
+  let pkgDir = Path.Combine(buildDir(), packageName)
+
+  Shell.Exec("./configure", (sprintf "--prefix=%s" instDir), pkgDir)
+*)
+
+  package
+
+let make package =
+  sh ("make") |> ignore
+  package
+
+let install package =
   sh ("make install")
 
 let withEnvironment (name: string) (value: string) (action: unit -> unit) =
@@ -125,9 +136,11 @@ let withEnvironment (name: string) (value: string) (action: unit -> unit) =
 
 let build (filename, package) =
   ensureDirectory (installDir())
-  configure()
-  make()
-  install()
+
+  package
+  |> configure
+  |> make
+  |> install
 
 // Targets
 // --------------------------------------------------------
