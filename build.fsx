@@ -107,22 +107,27 @@ let configure package =
     |> ignore
   )
 
-(*
-  let packageName = sprintf "%s-%s" package.Name package.Version
-  let instDir = installDir()
-  let pkgDir = Path.Combine(buildDir(), packageName)
-
-  Shell.Exec("./configure", (sprintf "--prefix=%s" instDir), pkgDir)
-*)
-
   package
 
 let make package =
-  sh ("make") |> ignore
+  trace("make")
+
+  let packageName = sprintf "%s-%s" package.Name package.Version
+  Path.Combine(buildDir(), packageName)
+  |> from (fun () ->
+    sh "make" |> ignore
+  )
+
   package
 
 let install package =
-  sh ("make install")
+  let packageName = sprintf "%s-%s" package.Name package.Version
+  Path.Combine(buildDir(), packageName)
+  |> from (fun () ->
+    sh "make" "install" |> ignore
+  )
+
+  package
 
 let withEnvironment (name: string) (value: string) (action: unit -> unit) =
   let oldEnv = environVarOrNone name
