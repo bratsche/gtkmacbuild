@@ -14,11 +14,8 @@ open Fake.EnvironmentHelper
 
 let originDir = FileSystemHelper.currentDirectory
 
-type PackageType =
-  GnuPackage | GnomePackage | FreeDesktopPackage | SourceForgePackage
-
 type PackageInfo = {
-  Source: PackageType;
+  Url: string;
   Name: string;
   Version: string;
   ConfigFlags: string option;
@@ -46,7 +43,6 @@ let srcDir () = Path.Combine(originDir, "src")
 
 // Some utility functions
 // ------------------------------------------------------
-let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" name name version
 let universalLdFlags () = ["-arch i386"; "-arch x86_64"]
 
 let majorVersion version =
@@ -54,6 +50,11 @@ let majorVersion version =
   match test.Success with
   | true -> test.Groups.[0].Value
   | false -> ""
+
+let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" name name version
+let gnomeUrl (name, version) = sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" name (majorVersion(version)) name version
+let fdoUrl (name, version) = sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" name name version
+let sfUrl (name, version) = sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.xz" name name version
 
 let from (action: unit -> unit) (path: string) =
   pushd path
@@ -75,15 +76,8 @@ let filenameFromUrl (url: string) =
   |> List.rev
   |> List.head
 
-let packageUrl package =
-  match package.Source with
-  | GnuPackage -> sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" package.Name package.Name package.Version
-  | GnomePackage -> sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" package.Name (majorVersion(package.Version)) package.Name package.Version
-  | FreeDesktopPackage -> sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" package.Name package.Name package.Version
-  | SourceForgePackage -> sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.xz" package.Name package.Name package.Version
-
 let download package =
-  let url = packageUrl package
+  let url = package.Url
   let file = Path.Combine(srcDir(), Path.GetFileName url)
 
   trace(sprintf "Downloading file %s" url)
@@ -176,26 +170,28 @@ Target "prep" <| fun _ ->
   trace("prep")
 
 Target "autoconf" <| fun _ ->
-  trace("autoconf")
-
-  { Source = GnuPackage; Name = "autoconf"; Version = "2.69"; ConfigFlags = None }
+  let version = "2.69"
+  { Url = gnuUrl("autoconf", version); Name = "autoconf"; Version = version; ConfigFlags = None }
   |> startBuild
 
 Target "automake" <| fun _ ->
-  trace("automake")
-  { Source = GnuPackage; Name = "automake"; Version = "1.13"; ConfigFlags = None }
+  let version = "1.13"
+  { Url = gnuUrl("automake", version); Name = "automake"; Version = version; ConfigFlags = None }
   |> startBuild
 
 Target "libtool" <| fun _ ->
-  { Source = GnuPackage; Name = "libtool"; Version = "2.4.2"; ConfigFlags = None }
+  let version = "2.4.2"
+  { Url = gnuUrl("libtool", version); Name = "libtool"; Version = version; ConfigFlags = None }
   |> startBuild
 
 Target "pkgconfig" <| fun _ ->
-  { Source = FreeDesktopPackage; Name = "pkg-config"; Version = "0.27"; ConfigFlags = Some("--with-internal-glib") }
+  let version = "0.27"
+  { Url = fdoUrl("pkg-config", version); Name = "pkg-config"; Version = version; ConfigFlags = Some("--with-internal-glib") }
   |> startBuild
 
 Target "gettext" <| fun _ ->
-  { Source = GnuPackage; Name = "gettext"; Version = "0.18.2"; ConfigFlags = None }
+  let version = "0.18.2"
+  { Url = gnuUrl("gettext", version); Name = "gettext"; Version = version; ConfigFlags = None }
   |> startBuild
 
 Target "freetype" <| fun _ ->
@@ -238,7 +234,8 @@ Target "zlib" <| fun _ ->
   trace("zlib")
 
 Target "libpng" <| fun _ ->
-  { Source = SourceForgePackage; Name = "libpng"; Version = "1.4.12"; ConfigFlags = None }
+  let version = "1.4.12"
+  { Url = sfUrl("libpng", version); Name = "libpng"; Version = version; ConfigFlags = None }
   |> startBuild
 
 Target "BuildAll" <| fun _ ->
