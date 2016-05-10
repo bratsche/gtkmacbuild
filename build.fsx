@@ -147,6 +147,13 @@ let build (filename, package) =
   |> make
   |> install
 
+let startBuild package =
+  package
+  |> download
+  |> extract
+  |> build
+  |> ignore
+
 // Targets
 // --------------------------------------------------------
 Target "prep" <| fun _ ->
@@ -156,18 +163,12 @@ Target "autoconf" <| fun _ ->
   trace("autoconf")
 
   { Source = GnuPackage; Name = "autoconf"; Version = "2.69" }
-  |> download
-  |> extract
-  |> build
-  |> ignore
+  |> startBuild
 
 Target "automake" <| fun _ ->
   trace("automake")
   { Source = GnuPackage; Name = "automake"; Version = "1.13" }
-  |> download
-  |> extract
-  |> build
-  |> ignore
+  |> startBuild
 
 Target "freetype" <| fun _ ->
   trace("freetype")
