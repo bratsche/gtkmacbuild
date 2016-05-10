@@ -14,6 +14,24 @@ open Fake.EnvironmentHelper
 
 let originDir = FileSystemHelper.currentDirectory
 
+type PackageType =
+  GnuPackage | GnomePackage
+
+type PackageInfo = {
+  Source: PackageType;
+  Name: string;
+  Version: string;
+}
+
+(*
+type PackageInfo2 =
+  GnuPackage of Name: string * Version: string
+  GnomePackage of Name: string * Version: string
+*)
+
+type Arch =
+  X86 | X64 | Universal
+
 type OS =
   Mac | Windows
 
@@ -25,7 +43,7 @@ type OS =
 // Some directories
 // ------------------------------------------------------
 let systemMonoDir = "/Library/Frameworks/Mono.framework/Versions/Current"
-let installDir () = Path.Combine(originDir, "install", "gtk", "Win32")
+let installDir () = Path.Combine(originDir, "install")
 let buildDir () = Path.Combine(originDir, "root")
 let binDir () = Path.Combine(installDir(), "bin")
 let libDir () = Path.Combine(installDir(), "lib")
@@ -36,14 +54,16 @@ let srcDir () = Path.Combine(originDir, "src")
 let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" name name version
 let universalLdFlags () = ["-arch i386"; "-arch x86_64"]
 
-let download url =
-  let file = Path.Combine(srcDir(), Path.GetFileName url)
+let majorVersion version =
+  let test = Regex.Match(version, "^[0-9]+\.[0-9]+")
+  match test.Success with
+  | true -> test.Groups.[0].Value
+  | false -> ""
 
-  if not (File.Exists (file)) then
-    use client = new WebClient() in
-      client.DownloadFile(url, file)
-
-  file
+let from (action: unit -> unit) (path: string) =
+  pushd path
+  action ()
+  popd()
 
 let sh command args =
   let exitCode = ProcessHelper.ExecProcess (fun info ->
@@ -54,20 +74,44 @@ let sh command args =
     let errorMsg = sprintf "Executing %s failed with exit code %d." command exitCode
     raise (BuildException(errorMsg, []))
 
-let extract filename =
+let filenameFromUrl (url: string) =
+  url.Split('/')
+  |> Array.toList
+  |> List.rev
+  |> List.head
+
+let packageUrl package =
+  match package.Source with
+  | GnuPackage -> sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" package.Name package.Name package.Version
+  | GnomePackage -> sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" package.Name (majorVersion(package.Version)) package.Name package.Version
+
+let download package =
+  let url = packageUrl package
+  let file = Path.Combine(srcDir(), Path.GetFileName url)
+
+  if not (File.Exists (file)) then
+    use client = new WebClient() in
+      client.DownloadFile(url, file)
+
+  (file, package)
+
+let extract (filename, package) =
   trace(sprintf ("extract %s") (filename))
   sprintf ("-C %s -xf %s") (buildDir()) (filename) |> sh "tar"
 
-let from (action: unit -> unit) (path: string) =
-  pushd path
-  action ()
-  popd()
+  (filename, package)
 
 let arch = sh "uname" "-m"
 
-let configure = sh (sprintf ("./configure --prefix=%s") (buildDir())) |> ignore
-let make = sh ("make") |> ignore
-let install = sh ("make install") |> ignore
+let configure () =
+  trace("configure")
+  sh (sprintf ("./configure --prefix=%s") (installDir()))
+
+let make () =
+  sh ("make")
+
+let install () =
+  sh ("make install")
 
 let withEnvironment (name: string) (value: string) (action: unit -> unit) =
   let oldEnv = environVarOrNone name
@@ -79,11 +123,11 @@ let withEnvironment (name: string) (value: string) (action: unit -> unit) =
   | None    -> ()
   | Some(x) -> setProcessEnvironVar name x
 
-let build =
-  ensureDirectory (buildDir())
-  configure
-  make
-  install
+let build (filename, package) =
+  ensureDirectory (installDir())
+  configure()
+  make()
+  install()
 
 // Targets
 // --------------------------------------------------------
@@ -92,11 +136,20 @@ Target "prep" <| fun _ ->
 
 Target "autoconf" <| fun _ ->
   trace("autoconf")
-  gnuUrl("autoconf", "2.69") |> download |> extract |> ignore
+
+  { Source = GnuPackage; Name = "autoconf"; Version = "2.69" }
+  |> download
+  |> extract
+  |> build
+  |> ignore
 
 Target "automake" <| fun _ ->
   trace("automake")
-  gnuUrl("automake", "1.13") |> download |> extract |> ignore
+  { Source = GnuPackage; Name = "automake"; Version = "1.13" }
+  |> download
+  |> extract
+  |> build
+  |> ignore
 
 Target "freetype" <| fun _ ->
   trace("freetype")
