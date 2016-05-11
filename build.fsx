@@ -233,7 +233,11 @@ Target "gdk-pixbuf" <| fun _ ->
   |> startBuild
 
 Target "fontconfig" <| fun _ ->
-  trace("fontconfig")
+  let version = "2.10.2"
+  let url = sprintf "http://www.fontconfig.org/release/fontconfig-%s.tar.gz" version
+  { Url = url; Name = "fontconfig"; Version = version; ConfigFlags = Some("--disable-docs") }
+  |> startBuild
+
 
 Target "pixman" <| fun _ ->
   let version = "0.30.0"
