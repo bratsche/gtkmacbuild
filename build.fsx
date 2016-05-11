@@ -54,7 +54,7 @@ let majorVersion version =
 let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" name name version
 let gnomeUrl (name, version) = sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" name (majorVersion(version)) name version
 let fdoUrl (name, version) = sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" name name version
-let sfUrl (name, version) = sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.xz" name name version
+let sfUrl (name, version) = sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.bz2" name name version
 
 let from (action: unit -> unit) (path: string) =
   pushd path
@@ -195,7 +195,11 @@ Target "gettext" <| fun _ ->
   |> startBuild
 
 Target "freetype" <| fun _ ->
-  trace("freetype")
+  let version = "2.5.0.1"
+  ensureDirectory (Path.Combine(installDir(), "include", "freetype2", "freetype", "cache"))
+  ensureDirectory (Path.Combine(installDir(), "include", "freetype2", "freetype", "internal"))
+  { Url = sfUrl("freetype", version); Name = "freetype"; Version = version; ConfigFlags = None }
+  |> startBuild
 
 Target "libffi" <| fun _ ->
   trace("libffi")
@@ -230,13 +234,23 @@ Target "gtk" <| fun _ ->
 Target "xamarin-gtk-theme" <| fun _ ->
   trace("xamarin-gtk-theme")
 
-Target "zlib" <| fun _ ->
-  trace("zlib")
-
 Target "libpng" <| fun _ ->
   let version = "1.4.12"
   { Url = sfUrl("libpng", version); Name = "libpng"; Version = version; ConfigFlags = None }
   |> startBuild
+
+Target "libjpeg" <| fun _ ->
+  { Url = "http://www.ijg.org/files/jpegsrc.v8.tar.gz"; Name = "jpeg"; Version = "8"; ConfigFlags = None}
+  |> startBuild
+
+Target "libtiff" <| fun _ ->
+  let version = "4.0.3"
+  let url = sprintf "http://download.osgeo.org/libtiff/tiff-%s.tar.gz" version
+  { Url = url; Name = "tiff"; Version = version; ConfigFlags = None}
+  |> startBuild
+
+Target "libgif" <| fun _ ->
+  trace("libgif")
 
 Target "BuildAll" <| fun _ ->
   trace("BuildAll")
@@ -248,12 +262,11 @@ Target "BuildAll" <| fun _ ->
 "cairo" <== ["fontconfig"; "glib"; "pixman"]
 "fontconfig" <== ["freetype"]
 "gdk-pixbuf" <== ["glib"; "libpng"]
-"glib" <== ["libffi"; "zlib"]
+"glib" <== ["libffi"]
 "gtk" <== ["atk"; "gdk-pixbuf"; "pango"]
 "harfbuzz" <== ["freetype"; "glib"]
-"libpng" <== ["zlib"]
 "pango" <== ["cairo"; "harfbuzz"]
-"pixman" <== ["libpng"]
+"pixman" <== ["libpng"; "libjpeg"; "libtiff"; "libgif"]
 "xamarin-gtk-theme" <== ["gtk"]
 "BuildAll" <== ["prep"; "gtk"; "xamarin-gtk-theme"]
 
