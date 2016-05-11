@@ -55,6 +55,7 @@ let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" nam
 let gnomeUrl (name, version) = sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" name (majorVersion(version)) name version
 let fdoUrl (name, version) = sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" name name version
 let sfUrl (name, version) = sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.bz2" name name version
+let cairoUrlXz (name, version) = sprintf "http://cairographics.org/releases/%s-%s.tar.xz" name version
 let cairoUrl (name, version) = sprintf "http://cairographics.org/releases/%s-%s.tar.gz" name version
 
 let from (action: unit -> unit) (path: string) =
@@ -119,7 +120,7 @@ let make package =
   let packageName = sprintf "%s-%s" package.Name package.Version
   Path.Combine(buildDir(), packageName)
   |> from (fun () ->
-    sh "make" |> ignore
+    sh "make" "" |> ignore
   )
 
   package
@@ -226,7 +227,9 @@ Target "pixman" <| fun _ ->
   |> startBuild
 
 Target "cairo" <| fun _ ->
-  trace("cairo")
+  let version = "1.12.14"
+  { Url = cairoUrlXz("cairo", version); Name = "cairo"; Version = version; ConfigFlags = Some("--enable-pdf --enable-quartz --enable-quartz-font --enable-quartz-image --disable-xlib --without-x") }
+  |> startBuild
 
 Target "pango" <| fun _ ->
   trace("pango")
