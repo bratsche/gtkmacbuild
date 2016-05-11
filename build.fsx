@@ -121,7 +121,7 @@ let make package =
   let packageName = sprintf "%s-%s" package.Name package.Version
   Path.Combine(buildDir(), packageName)
   |> from (fun () ->
-    sh "make" "-j 8" |> ignore
+    sh "make" "-j 4" |> ignore
   )
 
   package
@@ -154,12 +154,16 @@ let build (filename, package) =
   |> install
 
 let startBuild package =
-  EnvironmentHelper.setEnvironVar "PATH" (sprintf ("%s/bin:/usr/bin:/bin") (installDir()))
+  EnvironmentHelper.setEnvironVar "PATH" (sprintf ("%s/bin:/usr/bin:/bin:/usr/local/git/bin") (installDir()))
   EnvironmentHelper.setEnvironVar "CFLAGS" (sprintf ("-I%s/include") (installDir()))
   EnvironmentHelper.setEnvironVar "LD_LIBRARY_PATH" (sprintf ("%s/lib") (installDir()))
   EnvironmentHelper.setEnvironVar "LDFLAGS" (sprintf ("-L%s/lib") (installDir()))
   EnvironmentHelper.setEnvironVar "C_INCLUDE_PATH" (sprintf ("%s/include") (installDir()))
   EnvironmentHelper.setEnvironVar "ACLOCAL_FLAGS" (sprintf ("-I%s/share/aclocal") (installDir()))
+  EnvironmentHelper.setEnvironVar "PKG_CONFIG_PATH" (sprintf ("%s/lib/pkgconfig:%s/share/pkgconfig") (installDir()) (installDir()))
+  EnvironmentHelper.setEnvironVar "XDG_CONFIG_DIRS" (sprintf ("%s/etc/xdg") (installDir()))
+  EnvironmentHelper.setEnvironVar "XDG_CONFIG_HOME" "$HOME/.config"
+  EnvironmentHelper.setEnvironVar "XDG_DATA_DIRS" (sprintf ("%s/share") (installDir()))
 
   package
   |> download
@@ -178,7 +182,7 @@ Target "autoconf" <| fun _ ->
   |> startBuild
 
 Target "automake" <| fun _ ->
-  let version = "1.13"
+  let version = "1.13.4"
   { Url = gnuUrl("automake", version); Name = "automake"; Version = version; ConfigFlags = None }
   |> startBuild
 
@@ -211,7 +215,9 @@ Target "libffi" <| fun _ ->
   |> startBuild
 
 Target "glib" <| fun _ ->
-  trace("glib")
+  let version = "2.36.4"
+  { Url = gnomeUrlXz("glib", version); Name = "glib"; Version = version; ConfigFlags = Some("--disable-compile-warnings") }
+  |> startBuild
 
 Target "harfbuzz" <| fun _ ->
   trace("harfbuzz")
