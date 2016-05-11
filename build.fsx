@@ -223,10 +223,14 @@ Target "harfbuzz" <| fun _ ->
   trace("harfbuzz")
 
 Target "atk" <| fun _ ->
-  trace("atk")
+  let version = "2.8.0"
+  { Url = gnomeUrlXz("atk", version); Name = "atk"; Version = version; ConfigFlags = None }
+  |> startBuild
 
 Target "gdk-pixbuf" <| fun _ ->
-  trace("gdk-pixbuf")
+  let version = "2.28.2"
+  { Url = gnomeUrlXz("gdk-pixbuf", version); Name = "gdk-pixbuf"; Version = version; ConfigFlags = None }
+  |> startBuild
 
 Target "fontconfig" <| fun _ ->
   trace("fontconfig")
@@ -242,7 +246,9 @@ Target "cairo" <| fun _ ->
   |> startBuild
 
 Target "pango" <| fun _ ->
-  trace("pango")
+  let version = "1.35.0"
+  { Url = gnomeUrlXz("pango", version); Name = "pango"; Version = version; ConfigFlags = Some("--without-x") }
+  |> startBuild
 
 Target "gtk" <| fun _ ->
   trace("gtk")
