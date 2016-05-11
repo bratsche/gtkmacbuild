@@ -57,6 +57,7 @@ let fdoUrl (name, version) = sprintf "http://%s.freedesktop.org/releases/%s-%s.t
 let sfUrl (name, version) = sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.bz2" name name version
 let cairoUrlXz (name, version) = sprintf "http://cairographics.org/releases/%s-%s.tar.xz" name version
 let cairoUrl (name, version) = sprintf "http://cairographics.org/releases/%s-%s.tar.gz" name version
+let gnomeUrlXz (name, version) = sprintf "http://ftp.gnome.org/pub/gnome/sources/%s/%s/%s-%s.tar.xz" name (majorVersion(version)) name version
 
 let from (action: unit -> unit) (path: string) =
   pushd path
@@ -120,7 +121,7 @@ let make package =
   let packageName = sprintf "%s-%s" package.Name package.Version
   Path.Combine(buildDir(), packageName)
   |> from (fun () ->
-    sh "make" "" |> ignore
+    sh "make" "-j 8" |> ignore
   )
 
   package
@@ -204,7 +205,10 @@ Target "freetype" <| fun _ ->
   |> startBuild
 
 Target "libffi" <| fun _ ->
-  trace("libffi")
+  let version = "3.0.13"
+  let url = sprintf "ftp://sourceware.org/pub/libffi/libffi-%s.tar.gz" version
+  { Url = url; Name = "libffi"; Version = version; ConfigFlags = Some("--srcdir=/Users/cody/xam/gtkmacbuild/root/libffi-3.0.13") }
+  |> startBuild
 
 Target "glib" <| fun _ ->
   trace("glib")
