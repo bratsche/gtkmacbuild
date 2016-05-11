@@ -55,6 +55,7 @@ let gnuUrl (name, version) = sprintf "ftp://ftp.gnu.org/gnu/%s/%s-%s.tar.gz" nam
 let gnomeUrl (name, version) = sprintf "http://ftp.gnome.org/gnome/sources/%s/%s/%s-%s.tar.bz2" name (majorVersion(version)) name version
 let fdoUrl (name, version) = sprintf "http://%s.freedesktop.org/releases/%s-%s.tar.gz" name name version
 let sfUrl (name, version) = sprintf "http://downloads.sourceforge.net/sourceforge/%s/%s-%s.tar.bz2" name name version
+let cairoUrl (name, version) = sprintf "http://cairographics.org/releases/%s-%s.tar.gz" name version
 
 let from (action: unit -> unit) (path: string) =
   pushd path
@@ -220,7 +221,9 @@ Target "fontconfig" <| fun _ ->
   trace("fontconfig")
 
 Target "pixman" <| fun _ ->
-  trace("pixman")
+  let version = "0.30.0"
+  { Url = cairoUrl("pixman", version); Name = "pixman"; Version = version; ConfigFlags = None }
+  |> startBuild
 
 Target "cairo" <| fun _ ->
   trace("cairo")
