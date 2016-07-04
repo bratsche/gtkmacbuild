@@ -374,7 +374,7 @@ Target "BuildAll" <| fun _ ->
 "atk" <== ["glib"]
 "cairo" <== ["fontconfig"; "glib"; "pixman"]
 "fontconfig" <== ["freetype"]
-"gdk-pixbuf" <== ["glib"; "libpng"]
+"gdk-pixbuf" <== ["glib"; "libpng"; "libtiff"; "libjpeg"]
 "glib" <== ["libffi"]
 "gtk" <== ["atk"; "gdk-pixbuf"; "pango"]
 "harfbuzz" <== ["freetype"; "glib"]
