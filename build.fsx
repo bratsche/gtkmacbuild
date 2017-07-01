@@ -357,7 +357,7 @@ Target "libjpeg" <| fun _ ->
   |> startBuild
 
 Target "libtiff" <| fun _ ->
-  let version = "4.0.3"
+  let version = "4.0.8"
   let url = sprintf "http://download.osgeo.org/libtiff/tiff-%s.tar.gz" version
 
   defCustomSource url "tiff" version
