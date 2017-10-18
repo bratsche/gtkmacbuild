@@ -4,7 +4,7 @@ MONO=mono
 
 # getting latest FAKE via NuGet
 if [ ! -f tools/FAKE/tools/FAKE.exe ]; then
-	$MONO tools/NuGet/nuget.exe install FAKE -OutputDirectory tools -ExcludeVersion -Prerelease
+  $MONO tools/NuGet/nuget.exe install FAKE -OutputDirectory tools -ExcludeVersion -Prerelease -Source https://www.nuget.org/api/v2
 fi
 
 $MONO tools/FAKE/tools/FAKE.exe build.fsx $@
