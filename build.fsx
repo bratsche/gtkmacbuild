@@ -272,7 +272,7 @@ Target "freetype" <| fun _ ->
 
 Target "libffi" <| fun _ ->
   let version = "3.0.13"
-  let url = sprintf "ftp://sourceware.org/pub/libffi/libffi-%s.tar.gz" version
+  let url = sprintf "https://ftp.osuosl.org/pub/blfs/conglomeration/libffi/libffi-%s.tar.gz" version
   let pwd = System.IO.Directory.GetCurrentDirectory()
   let configureFlags = sprintf "--srcdir=%s/root/libffi-3.0.13" pwd
 
