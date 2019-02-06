@@ -332,8 +332,11 @@ Target "gtk-osx-docbook" <| fun _ ->
   |> startBuild
 
 Target "gtk-doc" <| fun _ ->
+  let flags = sprintf "--with-xml-catalog=%s/share/xml/catalog" (installDir())
+
   defSource GnomeXz "gtk-doc" "1.18"
   |> forPackage "gtk-doc"
+  |> withConfigFlags flags
   |> startBuild
 
 Target "gtk" <| fun _ ->
@@ -380,7 +383,8 @@ Target "BuildAll" <| fun _ ->
 "fontconfig" <== ["freetype"]
 "gdk-pixbuf" <== ["glib"; "libpng"; "libtiff"; "libjpeg"]
 "glib" <== ["libffi"]
-"gtk" <== ["atk"; "gdk-pixbuf"; "pango"]
+"gtk-doc" <== ["gtk-osx-docbook"]
+"gtk" <== ["gtk-doc"; "atk"; "gdk-pixbuf"; "pango"]
 "harfbuzz" <== ["freetype"; "glib"]
 "pango" <== ["cairo"; "harfbuzz"]
 "pixman" <== ["libpng"; "libjpeg"; "libtiff"; "libgif"]
