@@ -340,8 +340,6 @@ Target "gtk-doc" <| fun _ ->
   |> startBuild
 
 Target "gtk" <| fun _ ->
-  rm (Path.Combine(installDir(), "share", "aclocal", "glib-gettext.m4"))
-
   gitSource "git@github.com:bratsche/gtk.git" "xamarin-mac" "HEAD"
   |> forPackage "gtk"
   |> configurePackage Autogen
