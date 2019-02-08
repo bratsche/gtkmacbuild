@@ -260,6 +260,7 @@ Target "pkgconfig" <| fun _ ->
 Target "gettext" <| fun _ ->
   defSource Gnu "gettext" "0.18.2"
   |> forPackage "gettext"
+  |> withConfigFlags "--disable-java --disable-libasprintf --disable-openmp --with-included-glib"
   |> startBuild
 
 Target "freetype" <| fun _ ->
